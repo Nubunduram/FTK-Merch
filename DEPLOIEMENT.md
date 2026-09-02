@@ -36,6 +36,8 @@ git status   # .env ne doit pas apparaître
 1. Allez sur [railway.app](https://railway.app) → **New Project**
 2. **Add PostgreSQL** → Railway crée une base, notez la `DATABASE_URL` (onglet Variables)
 
+"postgresql://postgres:OzaAOdHfgyiDsJqcKkeLgIEvmTnrWzws@postgres.railway.internal:5432/railway"
+
 ### 2b. Importer le schéma
 
 Dans Railway → PostgreSQL → **Query** (ou connectez-vous avec psql) :
