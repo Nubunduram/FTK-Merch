@@ -9,9 +9,6 @@ const Signup = () => {
   const redirectTo = searchParams.get("redirect") || "/";
   const { signupAndLogin, authLoading, user } = useAuth();
 
-  if (authLoading) return null;
-  if (user) return <Navigate to={redirectTo} replace />;
-
   const [first_name, setFirstName] = useState("");
   const [last_name, setLastName] = useState("");
   const [email, setEmail] = useState("");
@@ -19,6 +16,9 @@ const Signup = () => {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  if (authLoading) return null;
+  if (user) return <Navigate to={redirectTo} replace />;
 
   const handleSubmit = async (e) => {
     e.preventDefault();

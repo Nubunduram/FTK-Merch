@@ -9,11 +9,12 @@ export default function Login() {
   const [searchParams] = useSearchParams();
   const redirectTo = searchParams.get("redirect") || "/";
 
-  if (authLoading) return null;
-  if (user) return <Navigate to={redirectTo} replace />;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+
+  if (authLoading) return null;
+  if (user) return <Navigate to={redirectTo} replace />;
 
   const handleSubmit = async (e) => {
     e.preventDefault();
