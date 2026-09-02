@@ -36,6 +36,8 @@ export default function ProductsAdmin() {
   const [products, setProducts] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [imgFile, setImgFile] = useState(null);
+  const [imgPreview, setImgPreview] = useState(null);
   const [imgUploading, setImgUploading] = useState(false);
   const [newProduct, setNewProduct] = useState({
     name: "",
@@ -85,8 +87,23 @@ export default function ProductsAdmin() {
       return;
     }
 
+    let img_url = newProduct.img_url;
+    if (imgFile) {
+      try {
+        setImgUploading(true);
+        img_url = await uploadToCloudinary(imgFile);
+      } catch {
+        showToast("Erreur upload image", "error");
+        setImgUploading(false);
+        return;
+      } finally {
+        setImgUploading(false);
+      }
+    }
+
     const productToSend = {
       ...newProduct,
+      img_url,
       price_in_cents: Math.round(parseFloat(newProduct.price) * 100),
     };
     delete productToSend.price;
@@ -95,6 +112,8 @@ export default function ProductsAdmin() {
     created.variants = created.variants || [];
     setProducts((prev) => [...prev, created]);
     setNewProduct({ name: "", description: "", price: "", img_url: "", sub_categories_id: "", variants: [] });
+    setImgFile(null);
+    setImgPreview(null);
     setShowForm(false);
   };
 
@@ -181,30 +200,22 @@ export default function ProductsAdmin() {
               />
               <div className={styles.padmImgField}>
                 <label className={styles.padmImgLabel}>
-                  {imgUploading ? "Upload en cours…" : newProduct.img_url ? "Changer l'image" : "Choisir une image"}
+                  {imgUploading ? "Upload en cours…" : imgFile ? "Changer l'image" : "Choisir une image"}
                   <input
                     type="file"
                     accept="image/*"
                     hidden
                     disabled={imgUploading}
-                    onChange={async (e) => {
+                    onChange={(e) => {
                       const file = e.target.files?.[0];
                       if (!file) return;
-                      try {
-                        setImgUploading(true);
-                        const url = await uploadToCloudinary(file);
-                        setNewProduct((p) => ({ ...p, img_url: url }));
-                        showToast("Image uploadée", "success");
-                      } catch {
-                        showToast("Erreur upload image", "error");
-                      } finally {
-                        setImgUploading(false);
-                      }
+                      setImgFile(file);
+                      setImgPreview(URL.createObjectURL(file));
                     }}
                   />
                 </label>
-                {newProduct.img_url && (
-                  <img src={newProduct.img_url} alt="preview" className={styles.padmImgPreview} />
+                {imgPreview && (
+                  <img src={imgPreview} alt="preview" className={styles.padmImgPreview} />
                 )}
               </div>
               <select
@@ -222,8 +233,8 @@ export default function ProductsAdmin() {
             </div>
 
             <div className={styles.padmFormFooter}>
-              <button onClick={handleCreateProduct} className={styles.padmBtnSubmit}>
-                <FaPlus size={10} /> Créer le produit
+              <button onClick={handleCreateProduct} className={styles.padmBtnSubmit} disabled={imgUploading}>
+                <FaPlus size={10} /> {imgUploading ? "Upload image…" : "Créer le produit"}
               </button>
               <button
                 onClick={() => setShowForm(false)}
