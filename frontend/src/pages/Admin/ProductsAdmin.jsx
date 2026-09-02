@@ -14,12 +14,29 @@ import { useToast } from "../../context/ToastContext";
 import { useConfirm } from "../../context/ConfirmContext";
 import styles from './ProductsAdmin.module.css';
 
+const CLOUD_NAME = import.meta.env.VITE_CLOUDINARY_CLOUD_NAME;
+const UPLOAD_PRESET = import.meta.env.VITE_CLOUDINARY_UPLOAD_PRESET;
+
+async function uploadToCloudinary(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  formData.append("upload_preset", UPLOAD_PRESET);
+  const res = await fetch(`https://api.cloudinary.com/v1_1/${CLOUD_NAME}/image/upload`, {
+    method: "POST",
+    body: formData,
+  });
+  if (!res.ok) throw new Error("Échec de l'upload image");
+  const data = await res.json();
+  return data.secure_url;
+}
+
 export default function ProductsAdmin() {
   const showToast = useToast();
   const confirm = useConfirm();
   const [products, setProducts] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [imgUploading, setImgUploading] = useState(false);
   const [newProduct, setNewProduct] = useState({
     name: "",
     description: "",
@@ -162,13 +179,34 @@ export default function ProductsAdmin() {
                 onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
                 className={styles.padmInput}
               />
-              <input
-                type="text"
-                placeholder="URL de l'image"
-                value={newProduct.img_url}
-                onChange={(e) => setNewProduct({ ...newProduct, img_url: e.target.value })}
-                className={styles.padmInput}
-              />
+              <div className={styles.padmImgField}>
+                <label className={styles.padmImgLabel}>
+                  {imgUploading ? "Upload en cours…" : newProduct.img_url ? "Changer l'image" : "Choisir une image"}
+                  <input
+                    type="file"
+                    accept="image/*"
+                    hidden
+                    disabled={imgUploading}
+                    onChange={async (e) => {
+                      const file = e.target.files?.[0];
+                      if (!file) return;
+                      try {
+                        setImgUploading(true);
+                        const url = await uploadToCloudinary(file);
+                        setNewProduct((p) => ({ ...p, img_url: url }));
+                        showToast("Image uploadée", "success");
+                      } catch {
+                        showToast("Erreur upload image", "error");
+                      } finally {
+                        setImgUploading(false);
+                      }
+                    }}
+                  />
+                </label>
+                {newProduct.img_url && (
+                  <img src={newProduct.img_url} alt="preview" className={styles.padmImgPreview} />
+                )}
+              </div>
               <select
                 value={newProduct.sub_categories_id}
                 onChange={(e) => setNewProduct({ ...newProduct, sub_categories_id: Number(e.target.value) })}
