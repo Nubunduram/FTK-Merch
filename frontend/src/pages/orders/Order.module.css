@@ -1,0 +1,225 @@
+.ord-root {
+  background: var(--color-bg);
+  min-height: 60vh;
+  padding: 40px 32px 64px;
+}
+
+.ord-inner { max-width: 1000px; margin: 0 auto; }
+
+.ord-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--color-text-faint);
+  margin-bottom: 24px;
+  transition: color var(--transition-base);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.ord-back:hover { color: var(--color-dark); }
+
+.ord-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 28px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.ord-title {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  letter-spacing: var(--tracking-normal);
+  color: var(--color-dark);
+}
+
+.ord-status-badge {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  padding: 5px 14px;
+  border-radius: var(--radius-full);
+  border: 1.5px solid;
+}
+
+.ord-layout {
+  display: grid;
+  grid-template-columns: 300px 1fr;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 768px) {
+  .ord-layout { grid-template-columns: 1fr; }
+  .ord-root { padding: 24px 16px 48px; }
+}
+
+/* ── Carte résumé ── */
+.ord-summary-card {
+  background: var(--color-white);
+  border-radius: var(--radius-xl);
+  border: 1.5px solid var(--color-border-light);
+  overflow: hidden;
+}
+
+.ord-card-header {
+  background: var(--color-dark);
+  padding: 14px 18px;
+}
+
+.ord-card-header-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  letter-spacing: var(--tracking-wider);
+  color: var(--color-white);
+}
+
+.ord-card-body { padding: 18px; }
+
+.ord-info-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.ord-info-icon {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-text-faint);
+  flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.ord-info-label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--color-text-faint);
+  margin-bottom: 2px;
+}
+
+.ord-info-value {
+  font-size: var(--text-md);
+  font-weight: 500;
+  color: var(--color-dark);
+  line-height: 1.4;
+}
+
+.ord-card-divider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin: 14px 0;
+}
+
+.ord-total-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ord-total-label {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-text);
+}
+
+.ord-total-value {
+  font-family: var(--font-display);
+  font-size: 1.4rem;
+  letter-spacing: 0.04em;
+  color: var(--color-primary);
+}
+
+/* ── Carte produits ── */
+.ord-items-card {
+  background: var(--color-white);
+  border-radius: var(--radius-xl);
+  border: 1.5px solid var(--color-border-light);
+  overflow: hidden;
+}
+
+.ord-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-bg);
+  transition: background var(--transition-fast);
+}
+
+.ord-item:last-child { border-bottom: none; }
+.ord-item:hover { background: var(--color-hover-bg); }
+
+.ord-item-img {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 10px;
+  background: var(--color-border-light);
+  flex-shrink: 0;
+}
+
+.ord-item-img-placeholder {
+  width: 64px;
+  height: 64px;
+  border-radius: 10px;
+  background: var(--color-border-light);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--color-disabled);
+  flex-shrink: 0;
+}
+
+.ord-item-info { flex: 1; min-width: 0; }
+
+.ord-item-name {
+  font-weight: 700;
+  font-size: var(--text-md);
+  color: var(--color-dark);
+  margin-bottom: 3px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ord-item-meta {
+  font-size: var(--text-sm);
+  color: var(--color-text-faint);
+}
+
+.ord-item-right {
+  text-align: right;
+  flex-shrink: 0;
+}
+
+.ord-item-price {
+  font-family: var(--font-display);
+  font-size: 1.05rem;
+  letter-spacing: 0.04em;
+  color: var(--color-dark);
+}
+
+.ord-item-qty {
+  font-size: var(--text-xs);
+  color: var(--color-text-faint);
+  margin-top: 2px;
+}

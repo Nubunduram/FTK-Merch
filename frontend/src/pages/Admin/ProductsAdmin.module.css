@@ -1,0 +1,217 @@
+.padm-root {
+}
+
+.padm-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.padm-title {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  letter-spacing: var(--tracking-normal);
+  color: var(--color-dark);
+}
+
+.padm-stats {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.padm-stat {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: var(--radius-md);
+  border: 1.5px solid var(--color-border);
+  color: var(--color-text-muted);
+  background: var(--color-white);
+}
+
+.padm-stat.warning {
+  background: var(--color-warning-bg);
+  border-color: var(--color-warning-border);
+  color: var(--color-warning-text);
+}
+
+.padm-btn-new {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  padding: 8px 18px;
+  background: var(--color-primary);
+  color: var(--color-white);
+  border: 2px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.padm-btn-new:hover {
+  background: transparent;
+  color: var(--color-primary);
+}
+
+/* ── Formulaire ── */
+.padm-form-wrap {
+  background: var(--color-white);
+  border: 1.5px solid var(--color-primary-subtle);
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+  margin-bottom: 24px;
+  animation: padm-fade 0.2s ease;
+}
+
+@keyframes padm-fade {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.padm-form-title {
+  font-family: var(--font-display);
+  font-size: 1.1rem;
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-dark);
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.padm-form-close {
+  background: none;
+  border: none;
+  color: var(--color-text-faint);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast);
+  display: flex;
+  align-items: center;
+}
+
+.padm-form-close:hover { color: var(--color-text); }
+
+.padm-form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 10px;
+  margin-bottom: 14px;
+}
+
+.padm-input {
+  font-size: var(--text-base);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  width: 100%;
+  color: var(--color-dark);
+  background: var(--color-white);
+  outline: none;
+  transition: border-color var(--transition-base);
+}
+
+.padm-input:focus { border-color: var(--color-primary); }
+
+.padm-select {
+  font-size: var(--text-base);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  width: 100%;
+  color: var(--color-dark);
+  background: var(--color-white);
+  outline: none;
+  cursor: pointer;
+  transition: border-color var(--transition-base);
+}
+
+.padm-select:focus { border-color: var(--color-primary); }
+
+.padm-form-footer {
+  display: flex;
+  gap: 8px;
+}
+
+.padm-btn-submit {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 8px 18px;
+  background: var(--color-primary);
+  color: var(--color-white);
+  border: none;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background var(--transition-base);
+}
+
+.padm-btn-submit:hover { background: var(--color-primary-hover); }
+
+.padm-btn-cancel-form {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 8px 18px;
+  background: transparent;
+  color: var(--color-text-faint);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.padm-btn-cancel-form:hover {
+  color: var(--color-text);
+  border-color: var(--color-text-faint);
+}
+
+/* ── Table ── */
+.padm-table-wrap {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  border: 1.5px solid var(--color-border-light);
+  overflow-x: auto;
+  box-shadow: 0 1px 8px rgba(0,0,0,0.04);
+}
+
+.padm-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.padm-table thead tr {
+  background: var(--color-bg);
+  border-bottom: 1.5px solid var(--color-border-light);
+}
+
+.padm-table thead th {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wider);
+  color: var(--color-text-faint);
+  padding: 10px 16px;
+  text-align: left;
+}
+
+.padm-empty {
+  text-align: center;
+  padding: 48px 16px;
+  color: var(--color-text-faint);
+  font-size: var(--text-md);
+}

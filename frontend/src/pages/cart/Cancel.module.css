@@ -1,0 +1,113 @@
+.cancel-root {
+  min-height: 60vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 48px 16px;
+  background: var(--color-white);
+}
+
+.cancel-card {
+  text-align: center;
+  max-width: 440px;
+  width: 100%;
+}
+
+.cancel-icon-wrap {
+  width: 80px;
+  height: 80px;
+  border-radius: 50%;
+  background: var(--color-danger-bg);
+  border: 2px solid var(--color-danger-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 24px;
+  animation: cancel-pop 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes cancel-pop {
+  from { transform: scale(0.5); opacity: 0; }
+  to   { transform: scale(1);   opacity: 1; }
+}
+
+.cancel-x {
+  font-size: 2rem;
+  color: var(--color-danger-text);
+  font-weight: 700;
+  line-height: 1;
+}
+
+.cancel-title {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  letter-spacing: var(--tracking-normal);
+  color: var(--color-dark);
+  margin-bottom: 12px;
+}
+
+.cancel-sub {
+  font-size: var(--text-md);
+  color: var(--color-text-muted);
+  line-height: 1.65;
+  margin-bottom: 32px;
+}
+
+.cancel-divider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin-bottom: 28px;
+}
+
+.cancel-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.cancel-btn-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-base);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  padding: 10px 24px;
+  background: var(--color-dark);
+  color: var(--color-white);
+  border-radius: 9px;
+  border: 2px solid var(--color-dark);
+  transition: all var(--transition-slow);
+  width: 100%;
+  justify-content: center;
+}
+
+.cancel-btn-primary:hover {
+  background: transparent;
+  color: var(--color-dark);
+}
+
+.cancel-btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: var(--text-base);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-wide);
+  padding: 10px 24px;
+  background: transparent;
+  color: var(--color-text-muted);
+  border-radius: 9px;
+  border: 2px solid var(--color-border);
+  transition: all var(--transition-slow);
+  width: 100%;
+  justify-content: center;
+}
+
+.cancel-btn-secondary:hover {
+  border-color: var(--color-text-faint);
+  color: var(--color-text);
+}

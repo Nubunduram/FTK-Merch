@@ -1,0 +1,84 @@
+{
+    "addresses": {
+        "id": "integer",
+        "created_at": "timestamp",
+        "user_id": "integer",
+        "label": "text",
+        "street": "text",
+        "city": "text",
+        "postal_code": "integer"
+    },
+    "categories": {
+        "id": "integer",
+        "created_at": "timestamp",
+        "name": "text",
+        "slug": "text"
+    },
+    "order_items": {
+        "id": "integer",
+        "created_at": "timestamp",
+        "order_id": "integer",
+        "product_variants_id": "integer",
+        "quantity": "integer",
+        "unit_price_in_cents": "integer"
+    },
+    "orders": {
+        "id": "integer",
+        "created_at": "timestamp",
+        "user_id": "integer",
+        "status": "enum('en attente', 'payé', 'envoyé', 'livré', 'annulé')",
+        "total_amount_in_cents": "integer",
+        "street": "text",
+        "city": "text",
+        "postal_code": "text"
+    },
+    "payments": {
+        "id": "integer",
+        "created_at": "timestamp",
+        "order_id": "integer",
+        "method": "enum('stripe', 'a voir...')",
+        "status": "enum('pending', 'paid', 'failed', 'refunded')?????",
+        "transaction_id": "text",
+        "amount_in_cents": "integer"
+    },
+    "product_variants": {
+        "id": "integer",
+        "created_at": "timestamp",
+        "product_id": "integer",
+        "color": "text",
+        "size": "text",
+        "sku": "text",
+        "stock": "integer"
+    },
+    "products": {
+        "id": "integer",
+        "created_at": "timestamp",
+        "name": "text",
+        "sub_category_id": "integer",
+        "description": "text",
+        "price_in_cents": "integer",
+        "img_url": "text",
+        "is_featured": "bool"
+    },
+    "reviews": {
+        "id": "integer",
+        "created_at": "timestamp",
+        "user_id": "integer",
+        "product_id": "integer",
+        "comment": "text"
+    },
+    "sub_categories": {
+        "id": "integer",
+        "created_at": "timestamp",
+        "name": "text",
+        "category_id": "integer",
+        "slug": "text"
+    },
+    "users": {
+        "id": "integer",
+        "created_at": "timestamp",
+        "email": "email",
+        "password": "password hash",
+        "role": "enum ('admin', 'user')"
+    }
+}

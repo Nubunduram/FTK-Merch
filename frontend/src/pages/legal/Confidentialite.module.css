@@ -1,0 +1,117 @@
+.conf-root {
+  background: var(--color-bg);
+  min-height: 60vh;
+}
+
+.conf-hero {
+  background: var(--color-dark);
+  padding: 40px 32px;
+}
+
+.conf-hero-inner { max-width: 1100px; margin: 0 auto; }
+
+.conf-hero-label {
+  font-size: var(--text-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-widest);
+  color: var(--color-primary);
+  margin-bottom: 8px;
+}
+
+.conf-hero-title {
+  font-family: var(--font-display);
+  font-size: 2.8rem;
+  letter-spacing: var(--tracking-normal);
+  color: var(--color-white);
+  line-height: 1;
+}
+
+.conf-hero-sub {
+  font-size: var(--text-base);
+  color: var(--color-text-muted);
+  margin-top: 10px;
+}
+
+.conf-body {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 48px 32px 64px;
+}
+
+.conf-section {
+  background: var(--color-white);
+  border: 1.5px solid var(--color-border-light);
+  border-radius: var(--radius-xl);
+  padding: 28px 32px;
+  margin-bottom: 20px;
+}
+
+.conf-section-title {
+  font-family: var(--font-display);
+  font-size: 1.2rem;
+  letter-spacing: var(--tracking-wide);
+  color: var(--color-dark);
+  margin-bottom: 16px;
+  padding-bottom: 12px;
+  border-bottom: 1.5px solid var(--color-border-light);
+}
+
+.conf-p {
+  font-size: var(--text-md);
+  color: var(--color-text);
+  line-height: 1.7;
+  margin-bottom: 10px;
+}
+
+.conf-p:last-child { margin-bottom: 0; }
+
+.conf-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 10px;
+}
+
+.conf-list li {
+  font-size: var(--text-md);
+  color: var(--color-text);
+  line-height: 1.7;
+  padding-left: 16px;
+  position: relative;
+}
+
+.conf-list li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--color-primary);
+  font-size: var(--text-sm);
+}
+
+.conf-placeholder {
+  display: inline-block;
+  background: #fef9c3;
+  border: 1px solid var(--color-warning-border);
+  border-radius: 4px;
+  padding: 0 6px;
+  font-size: var(--text-base);
+  font-weight: 600;
+  color: var(--color-warning-text-dark);
+}
+
+.conf-highlight {
+  background: var(--color-primary-bg);
+  border: 1.5px solid var(--color-primary-border);
+  border-radius: 10px;
+  padding: 16px 20px;
+  font-size: var(--text-md);
+  color: var(--color-primary-hover);
+  line-height: 1.6;
+  margin-bottom: 10px;
+}
+
+@media (max-width: 768px) {
+  .conf-hero { padding: 32px 20px; }
+  .conf-body { padding: 32px 20px 48px; }
+  .conf-section { padding: 20px 20px; }
+}
