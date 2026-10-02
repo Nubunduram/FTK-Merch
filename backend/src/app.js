@@ -20,6 +20,7 @@ const app = express();
 // Le webhook Stripe doit recevoir le body brut → enregistré AVANT express.json()
 app.use("/api/payments/webhook", express.raw({ type: "application/json" }));
 
+console.log("FRONTEND_URL =", process.env.FRONTEND_URL);
 // Middleware
 app.use(cors({
   origin: process.env.FRONTEND_URL || "http://localhost:5173",
