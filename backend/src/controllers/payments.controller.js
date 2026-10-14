@@ -112,8 +112,6 @@ exports.createCheckoutSession = async (req, res) => {
 exports.handleWebhook = async (req, res) => {
   const sig = req.headers["stripe-signature"];
 
-  console.log("[Webhook] Reçu — body type:", typeof req.body, "| Buffer:", Buffer.isBuffer(req.body));
-
   let event;
   try {
     event = stripe.webhooks.constructEvent(
@@ -131,29 +129,48 @@ exports.handleWebhook = async (req, res) => {
   if (event.type === "checkout.session.completed") {
     const session = event.data.object;
     console.log("[Webhook] Session complétée:", session.id);
+
+    // On ne crée la commande que si l'argent a réellement été encaissé
+    if (session.payment_status !== "paid") {
+      console.warn("[Webhook] Session non payée, ignorée:", session.id, session.payment_status);
+      return res.json({ received: true });
+    }
+
     const client = await pool.connect();
 
     try {
+      await client.query("BEGIN");
+
+      // Suppression atomique de la session : si Stripe renvoie le même événement
+      // (ou en parallèle), la 2e livraison ne trouve plus rien → pas de doublon.
       const { rows } = await client.query(
-        "SELECT * FROM checkout_sessions WHERE stripe_session_id = $1",
+        `DELETE FROM checkout_sessions
+         WHERE stripe_session_id = $1
+         RETURNING user_id, items, address`,
         [session.id]
       );
 
       if (rows.length === 0) {
-        console.error("[Webhook] Session introuvable en DB:", session.id);
+        await client.query("ROLLBACK");
+        console.warn("[Webhook] Session introuvable en DB (déjà traitée ?):", session.id);
         return res.json({ received: true });
       }
 
       const { user_id, items, address } = rows[0];
       console.log("[Webhook] Session trouvée pour user_id:", user_id, "— articles:", items.length);
 
-      await client.query("BEGIN");
-
       const subtotal = items.reduce(
         (sum, item) => sum + item.unit_price_in_cents * item.quantity, 0
       );
       const shippingFee = subtotal >= FREE_SHIPPING_THRESHOLD_CENTS ? 0 : SHIPPING_FEE_CENTS;
       const total = subtotal + shippingFee;
+
+      // Garde-fou : le total recalculé doit correspondre à ce que Stripe a encaissé
+      if (session.amount_total !== total) {
+        console.warn(
+          `[Webhook] Écart de montant — calculé: ${total}, Stripe: ${session.amount_total} (session ${session.id})`
+        );
+      }
 
       const { rows: orderRows } = await client.query(
         `INSERT INTO orders
@@ -164,6 +181,13 @@ exports.handleWebhook = async (req, res) => {
       );
       const orderId = orderRows[0].id;
       console.log("[Webhook] Commande créée:", orderId);
+
+      // Enregistrement du paiement (lien commande ↔ paiement Stripe)
+      await client.query(
+        `INSERT INTO payments (orders_id, method, status, transaction_id, amount_in_cents)
+         VALUES ($1, 'card', 'succeeded', $2, $3)`,
+        [orderId, session.payment_intent, session.amount_total]
+      );
 
       for (const item of items) {
         await client.query(
@@ -176,11 +200,6 @@ exports.handleWebhook = async (req, res) => {
           [item.quantity, item.product_variants_id]
         );
       }
-
-      await client.query(
-        "DELETE FROM checkout_sessions WHERE stripe_session_id = $1",
-        [session.id]
-      );
 
       await client.query("COMMIT");
       console.log("[Webhook] Commande", orderId, "finalisée avec succès");

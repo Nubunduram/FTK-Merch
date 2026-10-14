@@ -42,6 +42,7 @@ exports.signup = async (req, res) => {
   }
 };
 
+
 exports.login = async (req, res) => {
   try {
     const { email, password } = req.body;
@@ -51,16 +52,24 @@ exports.login = async (req, res) => {
       [email]
     );
 
-    if (userResult.rows.length === 0) {
-      return res.status(400).json({ message: "Utilisateur introuvable" });
-    }
-
     const user = userResult.rows[0];
 
-    const validPassword = await bcrypt.compare(password, user.password);
+    // Même message si l'utilisateur n'existe pas ou si le mot de passe est incorrect
+    if (!user) {
+      return res.status(401).json({
+        message: "Identifiants incorrects",
+      });
+    }
+
+    const validPassword = await bcrypt.compare(
+      password,
+      user.password
+    );
 
     if (!validPassword) {
-      return res.status(400).json({ message: "Mot de passe incorrect" });
+      return res.status(401).json({
+        message: "Identifiants incorrects",
+      });
     }
 
     const token = jwt.sign(
@@ -69,7 +78,7 @@ exports.login = async (req, res) => {
       { expiresIn: "7d" }
     );
 
-    res.json({
+    return res.json({
       token,
       user: {
         id: user.id,
@@ -79,9 +88,13 @@ exports.login = async (req, res) => {
     });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ message: "Erreur serveur" });
+
+    return res.status(500).json({
+      message: "Erreur serveur",
+    });
   }
 };
+
 
 exports.me = async (req, res) => {
   res.json(req.user);

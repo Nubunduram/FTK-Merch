@@ -1,0 +1,1236 @@
+openapi: 3.0.3
+info:
+  title: FTK Merch API
+  version: 1.0.0
+  description: |
+    API de la boutique FTK Merch (catalogue, panier, commandes, paiement Stripe, administration).
+
+    **Authentification :** JWT (valable 7 jours) à envoyer dans l'en-tête `Authorization: Bearer <token>`.
+
+    **Format des erreurs :** selon les contrôleurs, le message d'erreur est dans `message` ou dans `error`.
+    Les deux schémas (`ErrorMessage`, `ErrorError`) sont documentés.
+
+    **Montants :** tous les montants sont en centimes (`*_in_cents`).
+servers:
+  - url: http://localhost:3000
+    description: Développement local
+
+tags:
+  - name: Auth
+  - name: Users
+  - name: Addresses
+  - name: Categories
+  - name: SubCategories
+  - name: Products
+  - name: Variants
+  - name: Reviews
+  - name: Orders
+  - name: Payments
+  - name: Admin
+
+paths:
+  # ───────────────────────── AUTH ─────────────────────────
+  /api/auth/signup:
+    post:
+      tags: [Auth]
+      summary: Créer un compte
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [first_name, last_name, email, password]
+              properties:
+                first_name: { type: string, example: Jean }
+                last_name: { type: string, example: Dupont }
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        "201":
+          description: Compte créé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+                  user: { $ref: "#/components/schemas/User" }
+        "400":
+          description: Email déjà utilisé
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+        "500": { $ref: "#/components/responses/ServerErrorMessage" }
+
+  /api/auth/login:
+    post:
+      tags: [Auth]
+      summary: Se connecter
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [email, password]
+              properties:
+                email: { type: string, format: email }
+                password: { type: string, format: password }
+      responses:
+        "200":
+          description: Connexion réussie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token: { type: string }
+                  user:
+                    type: object
+                    properties:
+                      id: { type: integer }
+                      email: { type: string, format: email }
+                      role: { type: string, enum: [user, admin] }
+        "400":
+          description: Utilisateur introuvable ou mot de passe incorrect
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+        "500": { $ref: "#/components/responses/ServerErrorMessage" }
+
+  /api/auth/me:
+    get:
+      tags: [Auth]
+      summary: Utilisateur connecté
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Profil de l'utilisateur courant
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+
+  # ───────────────────────── USERS ─────────────────────────
+  /api/users/me:
+    patch:
+      tags: [Users]
+      summary: Modifier son profil
+      description: Seuls `first_name`, `last_name` et `email` sont modifiables. Les valeurs vides ou nulles sont ignorées.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                first_name: { type: string }
+                last_name: { type: string }
+                email: { type: string, format: email }
+      responses:
+        "200":
+          description: Profil mis à jour
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/User" }
+        "400":
+          description: Aucune donnée à mettre à jour
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/ServerErrorMessage" }
+    delete:
+      tags: [Users]
+      summary: Supprimer son compte (RGPD, Art. 17)
+      description: Supprime en transaction les avis, commandes (et leurs lignes), adresses et le compte.
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Compte supprimé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: Compte supprimé }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/ServerErrorMessage" }
+
+  /api/users/me/export:
+    get:
+      tags: [Users]
+      summary: Exporter ses données (RGPD, Art. 20)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Export complet des données personnelles
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  exported_at: { type: string, format: date-time }
+                  profile:
+                    allOf:
+                      - $ref: "#/components/schemas/User"
+                      - type: object
+                        properties:
+                          created_at: { type: string, format: date-time }
+                  addresses:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        label: { type: string }
+                        street: { type: string }
+                        city: { type: string }
+                        postal_code: { type: string }
+                  orders:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer }
+                        status: { $ref: "#/components/schemas/OrderStatus" }
+                        total_amount_in_cents: { type: integer }
+                        street: { type: string }
+                        city: { type: string }
+                        postal_code: { type: string }
+                        created_at: { type: string, format: date-time }
+                        items:
+                          type: array
+                          items:
+                            type: object
+                            properties:
+                              name: { type: string }
+                              size: { type: string }
+                              color: { type: string }
+                              quantity: { type: integer }
+                              unit_price_in_cents: { type: integer }
+                  reviews:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        product: { type: string }
+                        comment: { type: string }
+                        created_at: { type: string, format: date-time }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/ServerErrorMessage" }
+
+  /api/users/change_password:
+    patch:
+      tags: [Users]
+      summary: Changer son mot de passe
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [old_password, new_password]
+              properties:
+                old_password: { type: string, format: password }
+                new_password: { type: string, format: password }
+      responses:
+        "200":
+          description: Mot de passe mis à jour
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: Mot de passe mis à jour }
+        "400":
+          description: Ancien mot de passe incorrect
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/ServerErrorMessage" }
+
+  # ───────────────────────── ADDRESSES ─────────────────────────
+  /api/addresses:
+    get:
+      tags: [Addresses]
+      summary: Lister mes adresses
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Liste des adresses
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Address" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/ServerErrorMessage" }
+    post:
+      tags: [Addresses]
+      summary: Ajouter une adresse
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AddressInput" }
+      responses:
+        "201":
+          description: Adresse créée
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Address" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/ServerErrorMessage" }
+
+  /api/addresses/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    patch:
+      tags: [Addresses]
+      summary: Modifier une adresse
+      description: Seule une adresse appartenant à l'utilisateur peut être modifiée.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AddressInput" }
+      responses:
+        "200":
+          description: Adresse mise à jour
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Address" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/ServerErrorMessage" }
+    delete:
+      tags: [Addresses]
+      summary: Supprimer une adresse
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Adresse supprimée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: Adresse supprimée }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/ServerErrorMessage" }
+
+  # ───────────────────────── CATEGORIES ─────────────────────────
+  /api/categories:
+    get:
+      tags: [Categories]
+      summary: Lister les catégories
+      description: Triées par `position` puis `id`.
+      responses:
+        "200":
+          description: Liste des catégories
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Category" }
+        "500": { $ref: "#/components/responses/ServerErrorError" }
+    post:
+      tags: [Categories]
+      summary: Créer une catégorie (admin)
+      description: La `position` est attribuée automatiquement (dernière + 1).
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, slug]
+              properties:
+                name: { type: string, example: Vêtements }
+                slug: { type: string, example: vetements }
+      responses:
+        "201":
+          description: Catégorie créée
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Category" }
+        "400":
+          description: name et slug requis
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorError" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/ServerErrorError" }
+
+  /api/categories/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    patch:
+      tags: [Categories]
+      summary: Modifier une catégorie (admin)
+      description: Les champs omis conservent leur valeur actuelle.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string }
+                slug: { type: string }
+                position: { type: integer }
+      responses:
+        "200":
+          description: Catégorie mise à jour
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Category" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404":
+          description: Catégorie introuvable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorError" }
+        "500": { $ref: "#/components/responses/ServerErrorError" }
+    delete:
+      tags: [Categories]
+      summary: Supprimer une catégorie (admin)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204": { description: Catégorie supprimée }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409":
+          description: La catégorie contient des sous-catégories
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorError" }
+        "500": { $ref: "#/components/responses/ServerErrorError" }
+
+  # ───────────────────────── SUB-CATEGORIES ─────────────────────────
+  /api/sub_categories:
+    get:
+      tags: [SubCategories]
+      summary: Lister les sous-catégories
+      description: Inclut le nom et le slug de la catégorie parente.
+      responses:
+        "200":
+          description: Liste des sous-catégories
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SubCategory" }
+        "500": { $ref: "#/components/responses/ServerErrorError" }
+    post:
+      tags: [SubCategories]
+      summary: Créer une sous-catégorie (admin)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, categories_id]
+              properties:
+                name: { type: string, example: T-shirts }
+                categories_id: { type: integer }
+      responses:
+        "201":
+          description: Sous-catégorie créée
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SubCategory" }
+        "400":
+          description: name et categories_id requis
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorError" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/ServerErrorError" }
+
+  /api/sub_categories/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    patch:
+      tags: [SubCategories]
+      summary: Modifier une sous-catégorie (admin)
+      description: Les deux champs sont écrasés ; fournis `name` et `categories_id`.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, categories_id]
+              properties:
+                name: { type: string }
+                categories_id: { type: integer }
+      responses:
+        "200":
+          description: Sous-catégorie mise à jour
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SubCategory" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404":
+          description: Sous-catégorie introuvable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorError" }
+        "500": { $ref: "#/components/responses/ServerErrorError" }
+    delete:
+      tags: [SubCategories]
+      summary: Supprimer une sous-catégorie (admin)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "204": { description: Sous-catégorie supprimée }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409":
+          description: La sous-catégorie contient des produits
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorError" }
+        "500": { $ref: "#/components/responses/ServerErrorError" }
+
+  # ───────────────────────── PRODUCTS ─────────────────────────
+  /api/products:
+    get:
+      tags: [Products]
+      summary: Lister les produits (avec leurs variantes)
+      description: |
+        Sans le paramètre `admin`, les produits sans variante sont exclus de la boutique.
+      parameters:
+        - name: is_featured
+          in: query
+          description: "`true` pour les produits à la une, toute autre valeur non vide pour les autres"
+          schema: { type: string, enum: ["true", "false"] }
+        - name: sub_categories_id
+          in: query
+          schema: { type: integer }
+        - name: admin
+          in: query
+          description: Si présent, inclut les produits sans variante
+          schema: { type: string }
+      responses:
+        "200":
+          description: Liste des produits
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ProductWithVariants" }
+        "500": { $ref: "#/components/responses/ServerErrorError" }
+    post:
+      tags: [Products]
+      summary: Créer un produit (admin)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, price_in_cents, sub_categories_id]
+              properties:
+                name: { type: string }
+                description: { type: string }
+                price_in_cents: { type: integer, example: 2990 }
+                img_url: { type: string, format: uri }
+                sub_categories_id: { type: integer }
+      responses:
+        "201":
+          description: Produit créé (sans variante, `is_featured` à false)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductWithVariants" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/ServerErrorError" }
+
+  /api/products/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    get:
+      tags: [Products]
+      summary: Détail d'un produit (variantes + avis)
+      responses:
+        "200":
+          description: Produit complet
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/ProductWithVariants"
+                  - type: object
+                    properties:
+                      reviews:
+                        type: array
+                        items: { $ref: "#/components/schemas/ReviewWithAuthor" }
+        "404":
+          description: Produit non trouvé
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorError" }
+        "500": { $ref: "#/components/responses/ServerErrorError" }
+    patch:
+      tags: [Products]
+      summary: Mettre un produit à la une (admin)
+      description: Seul `is_featured` est modifiable.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [is_featured]
+              properties:
+                is_featured: { type: boolean }
+      responses:
+        "200":
+          description: Produit mis à jour
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Product" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/ServerErrorError" }
+    delete:
+      tags: [Products]
+      summary: Supprimer un produit (admin)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Produit supprimé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: Produit supprimé }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/ServerErrorError" }
+
+  # ───────────────────────── VARIANTS ─────────────────────────
+  /api/product_variants:
+    post:
+      tags: [Variants]
+      summary: Créer une variante (admin)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [products_id, color, size, sku, stock]
+              properties:
+                products_id: { type: integer }
+                color: { type: string, example: Noir }
+                color_hex: { type: string, example: "#000000" }
+                size: { type: string, example: M }
+                sku: { type: string }
+                stock: { type: integer, minimum: 0 }
+      responses:
+        "201":
+          description: Variante créée
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductVariant" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/ServerErrorError" }
+
+  /api/product_variants/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    patch:
+      tags: [Variants]
+      summary: Modifier le stock / la couleur d'une variante (admin)
+      description: "`stock` est toujours écrasé (fournis-le). `color` et `color_hex` sont conservés s'ils sont omis."
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [stock]
+              properties:
+                stock: { type: integer, minimum: 0 }
+                color: { type: string }
+                color_hex: { type: string }
+      responses:
+        "200":
+          description: Variante mise à jour
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ProductVariant" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/ServerErrorError" }
+    delete:
+      tags: [Variants]
+      summary: Supprimer une variante (admin)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Variante supprimée
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: Variante supprimée }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409":
+          description: Variante liée à des commandes existantes
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+        "500": { $ref: "#/components/responses/ServerErrorMessage" }
+
+  # ───────────────────────── REVIEWS ─────────────────────────
+  /api/reviews/{productId}:
+    post:
+      tags: [Reviews]
+      summary: Publier un avis sur un produit
+      description: Un seul avis par utilisateur et par produit.
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: productId
+          in: path
+          required: true
+          schema: { type: integer }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [comment]
+              properties:
+                comment: { type: string }
+      responses:
+        "201":
+          description: Avis créé
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Review"
+                  - type: object
+                    properties:
+                      first_name: { type: string }
+        "400":
+          description: Avis déjà posté sur ce produit
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/ServerErrorError" }
+
+  /api/reviews/{reviewId}:
+    delete:
+      tags: [Reviews]
+      summary: Supprimer un avis (auteur ou admin)
+      security: [{ bearerAuth: [] }]
+      parameters:
+        - name: reviewId
+          in: path
+          required: true
+          schema: { type: integer }
+      responses:
+        "200":
+          description: Avis supprimé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: Commentaire supprimé }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403":
+          description: Ni l'auteur ni un admin
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+        "404":
+          description: Commentaire introuvable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+        "500": { $ref: "#/components/responses/ServerErrorError" }
+
+  # ───────────────────────── ORDERS ─────────────────────────
+  /api/orders:
+    get:
+      tags: [Orders]
+      summary: Lister mes commandes
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Commandes de l'utilisateur, de la plus récente à la plus ancienne
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Order" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "500": { $ref: "#/components/responses/ServerErrorMessage" }
+    post:
+      tags: [Orders]
+      summary: Créer une commande directement (statut `pending`)
+      description: |
+        Crée la commande **sans passer par Stripe** et décrémente le stock.
+        Les prix et le total sont recalculés côté serveur.
+        Le parcours normal du site passe par `/api/payments/create-checkout-session`.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CheckoutInput" }
+      responses:
+        "201":
+          description: Commande créée
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+        "400":
+          description: Données manquantes
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "409": { $ref: "#/components/responses/StockError" }
+        "500":
+          description: Erreur de création
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message: { type: string, example: Erreur création commande }
+                  error: { type: string }
+
+  /api/orders/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    get:
+      tags: [Orders]
+      summary: Détail d'une de mes commandes (avec lignes)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Commande et ses articles
+          content:
+            application/json:
+              schema:
+                allOf:
+                  - $ref: "#/components/schemas/Order"
+                  - type: object
+                    properties:
+                      items:
+                        type: array
+                        items: { $ref: "#/components/schemas/OrderItem" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404":
+          description: Commande introuvable (ou appartenant à un autre utilisateur)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+        "500": { $ref: "#/components/responses/ServerErrorMessage" }
+
+  # ───────────────────────── PAYMENTS ─────────────────────────
+  /api/payments/create-checkout-session:
+    post:
+      tags: [Payments]
+      summary: Créer une session de paiement Stripe
+      description: |
+        Vérifie le stock, calcule le total depuis la base (livraison 5,90 € offerte dès 60 €),
+        crée la session Stripe puis enregistre le panier dans `checkout_sessions`.
+        **La commande n'est créée qu'à la réception du webhook.**
+        Le client doit rediriger le navigateur vers `url`.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/CheckoutInput" }
+      responses:
+        "200":
+          description: URL de paiement Stripe
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  url: { type: string, format: uri }
+        "400":
+          description: Données manquantes
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "409": { $ref: "#/components/responses/StockError" }
+        "500": { $ref: "#/components/responses/ServerErrorMessage" }
+
+  /api/payments/webhook:
+    post:
+      tags: [Payments]
+      summary: Webhook Stripe
+      description: |
+        Appelé par Stripe uniquement (corps brut + en-tête `stripe-signature`).
+        Sur `checkout.session.completed`, crée la commande au statut `paid`,
+        ses lignes, décrémente le stock et supprime l'entrée `checkout_sessions`.
+        Ne pas appeler manuellement.
+      parameters:
+        - name: stripe-signature
+          in: header
+          required: true
+          schema: { type: string }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: Événement Stripe
+      responses:
+        "200":
+          description: Événement reçu
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  received: { type: boolean, example: true }
+        "400":
+          description: Signature invalide
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+        "500":
+          description: Erreur de traitement de la commande
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+
+  # ───────────────────────── ADMIN ─────────────────────────
+  /api/admin/orders:
+    get:
+      tags: [Admin]
+      summary: Lister toutes les commandes (admin)
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Toutes les commandes, de la plus récente à la plus ancienne
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Order" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/ServerErrorMessage" }
+
+  /api/admin/orders/{id}:
+    parameters:
+      - $ref: "#/components/parameters/IdPath"
+    patch:
+      tags: [Admin]
+      summary: Changer le statut d'une commande (admin)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [status]
+              properties:
+                status: { $ref: "#/components/schemas/OrderStatus" }
+      responses:
+        "200":
+          description: Commande mise à jour
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Order" }
+        "400":
+          description: Statut invalide
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404":
+          description: Commande introuvable
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ErrorMessage" }
+        "500": { $ref: "#/components/responses/ServerErrorMessage" }
+
+  /api/admin/stats:
+    get:
+      tags: [Admin]
+      summary: Statistiques du tableau de bord (admin)
+      description: Les compteurs PostgreSQL `COUNT`/`SUM` sont renvoyés sous forme de chaînes.
+      security: [{ bearerAuth: [] }]
+      responses:
+        "200":
+          description: Statistiques
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orders:
+                    type: object
+                    properties:
+                      total_orders: { type: string, example: "42" }
+                      pending: { type: string }
+                      paid: { type: string }
+                      shipped: { type: string }
+                      delivered: { type: string }
+                      canceled: { type: string }
+                      total_revenue: { type: string, description: Somme en centimes }
+                  products:
+                    type: object
+                    properties:
+                      total_products: { type: string }
+                  low_stock:
+                    type: array
+                    description: 10 variantes au stock <= 5
+                    items:
+                      type: object
+                      properties:
+                        id: { type: integer }
+                        color: { type: string }
+                        size: { type: string }
+                        stock: { type: integer }
+                        name: { type: string }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "500": { $ref: "#/components/responses/ServerErrorMessage" }
+
+# ───────────────────────── COMPONENTS ─────────────────────────
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    IdPath:
+      name: id
+      in: path
+      required: true
+      schema: { type: integer }
+
+  responses:
+    Unauthorized:
+      description: Token manquant, invalide, ou utilisateur inexistant
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorMessage" }
+    Forbidden:
+      description: Accès réservé aux administrateurs
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorMessage" }
+    ServerErrorMessage:
+      description: Erreur serveur
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorMessage" }
+    ServerErrorError:
+      description: Erreur serveur
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ErrorError" }
+    StockError:
+      description: Stock insuffisant pour un ou plusieurs articles
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              type: { type: string, example: STOCK_ERROR }
+              items:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    name: { type: string }
+                    color: { type: string }
+                    size: { type: string }
+                    requested: { type: integer }
+                    available: { type: integer }
+
+  schemas:
+    ErrorMessage:
+      type: object
+      properties:
+        message: { type: string, example: Erreur serveur }
+    ErrorError:
+      type: object
+      properties:
+        error: { type: string, example: Erreur serveur }
+
+    User:
+      type: object
+      properties:
+        id: { type: integer }
+        email: { type: string, format: email }
+        role: { type: string, enum: [user, admin] }
+        first_name: { type: string }
+        last_name: { type: string }
+
+    AddressInput:
+      type: object
+      required: [label, street, city, postal_code]
+      properties:
+        label: { type: string, example: Maison }
+        street: { type: string, example: 12 rue des Fleurs }
+        city: { type: string, example: Paris }
+        postal_code: { type: string, example: "75001" }
+    Address:
+      allOf:
+        - $ref: "#/components/schemas/AddressInput"
+        - type: object
+          properties:
+            id: { type: integer }
+            users_id: { type: integer }
+
+    Category:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        slug: { type: string }
+        position: { type: integer }
+    SubCategory:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        categories_id: { type: integer }
+        category_name: { type: string }
+        category_slug: { type: string }
+
+    Product:
+      type: object
+      properties:
+        id: { type: integer }
+        name: { type: string }
+        description: { type: string }
+        price_in_cents: { type: integer }
+        img_url: { type: string }
+        sub_categories_id: { type: integer }
+        is_featured: { type: boolean }
+        created_at: { type: string, format: date-time }
+    ProductWithVariants:
+      allOf:
+        - $ref: "#/components/schemas/Product"
+        - type: object
+          properties:
+            variants:
+              type: array
+              items: { $ref: "#/components/schemas/ProductVariant" }
+    ProductVariant:
+      type: object
+      properties:
+        id: { type: integer }
+        products_id: { type: integer }
+        color: { type: string }
+        color_hex: { type: string }
+        size: { type: string }
+        sku: { type: string }
+        stock: { type: integer }
+        created_at: { type: string, format: date-time }
+
+    Review:
+      type: object
+      properties:
+        id: { type: integer }
+        users_id: { type: integer }
+        products_id: { type: integer }
+        comment: { type: string }
+        created_at: { type: string, format: date-time }
+    ReviewWithAuthor:
+      type: object
+      properties:
+        id: { type: integer }
+        comment: { type: string }
+        created_at: { type: string, format: date-time }
+        users_id: { type: integer }
+        first_name: { type: string }
+        last_name: { type: string }
+
+    OrderStatus:
+      type: string
+      enum: [pending, paid, shipped, delivered, canceled]
+    Order:
+      type: object
+      properties:
+        id: { type: integer }
+        users_id: { type: integer }
+        status: { $ref: "#/components/schemas/OrderStatus" }
+        total_amount_in_cents: { type: integer }
+        shipping_fee_in_cents: { type: integer }
+        street: { type: string }
+        city: { type: string }
+        postal_code: { type: string }
+        created_at: { type: string, format: date-time }
+    OrderItem:
+      type: object
+      properties:
+        id: { type: integer }
+        orders_id: { type: integer }
+        product_variants_id: { type: integer }
+        quantity: { type: integer }
+        unit_price_in_cents: { type: integer }
+        name: { type: string }
+        img_url: { type: string }
+        size: { type: string }
+        color: { type: string }
+
+    CheckoutInput:
+      type: object
+      required: [items, address]
+      properties:
+        items:
+          type: array
+          minItems: 1
+          items:
+            type: object
+            required: [product_variants_id, quantity]
+            properties:
+              product_variants_id: { type: integer }
+              quantity: { type: integer, minimum: 1 }
+        address:
+          type: object
+          required: [street, city, postal_code]
+          properties:
+            street: { type: string }
+            city: { type: string }
+            postal_code: { type: string }

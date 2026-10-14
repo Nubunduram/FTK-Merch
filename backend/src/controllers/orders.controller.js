@@ -3,7 +3,7 @@ const pool = require("../config/db");
 const SHIPPING_FEE_CENTS = 590;           // 5,90 €
 const FREE_SHIPPING_THRESHOLD_CENTS = 6000; // 60,00 €
 
-// ✅ GET toutes les commandes utilisateur
+// GET toutes les commandes utilisateur
 exports.getUserOrders = async (req, res) => {
     try {
         const result = await pool.query(
@@ -19,7 +19,7 @@ exports.getUserOrders = async (req, res) => {
     }
 };
 
-// ✅ GET commande par ID (avec items)
+// GET commande par ID (avec items)
 exports.getOrderById = async (req, res) => {
     try {
         const orderId = Number(req.params.id);
@@ -60,7 +60,7 @@ exports.getOrderById = async (req, res) => {
     }
 };
 
-// ✅ CREATE ORDER
+// CREATE ORDER
 exports.createOrder = async (req, res) => {
     const client = await pool.connect();
 
@@ -73,7 +73,7 @@ exports.createOrder = async (req, res) => {
 
         await client.query("BEGIN");
 
-        // ✅ Récupération du prix, du stock et des infos produit depuis la DB
+        // Récupération du prix, du stock et des infos produit depuis la DB
         const enrichedItems = await Promise.all(
             items.map(async (item) => {
                 const { rows } = await client.query(
@@ -99,7 +99,7 @@ exports.createOrder = async (req, res) => {
             })
         );
 
-        // ✅ Vérification du stock AVANT d'insérer la commande — collecte tous les articles en rupture
+        // Vérification du stock AVANT d'insérer la commande — collecte tous les articles en rupture
         const stockErrors = [];
         for (const item of enrichedItems) {
             if (item.stock < item.quantity) {
@@ -117,7 +117,7 @@ exports.createOrder = async (req, res) => {
             return res.status(409).json({ type: "STOCK_ERROR", items: stockErrors });
         }
 
-        // ✅ Total calculé uniquement depuis la DB
+        // Total calculé uniquement depuis la DB
         const subtotal = enrichedItems.reduce((sum, item) => {
             return sum + item.unit_price_in_cents * item.quantity;
         }, 0);
@@ -135,7 +135,7 @@ exports.createOrder = async (req, res) => {
 
         const order = orderRows[0];
 
-        // ✅ Insertion des order_items + décrémentation du stock
+        // Insertion des order_items + décrémentation du stock
         for (const item of enrichedItems) {
             await client.query(
                 `INSERT INTO order_items
