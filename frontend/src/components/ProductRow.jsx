@@ -18,7 +18,7 @@ export default function ProductRow({
     stock: 0,
   });
   const [showVariantForm, setShowVariantForm] = useState(false);
-  const [rerender, setRerender] = useState(0);
+  const [setRerender] = useState(0);
 
   const handleAdd = () => {
     onAddVariant(product.id, newVariant);

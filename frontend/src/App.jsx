@@ -23,27 +23,27 @@ import { AuthProvider } from './context/AuthContext'
 import { ToastProvider } from './context/ToastContext'
 import { ConfirmProvider } from './context/ConfirmContext'
 import { CategoriesProvider } from './context/CategoriesContext'
-import { getMe } from './api/auth'
-import { useState, useEffect } from 'react'
+// import { getMe } from './api/auth'
+// import { useState, useEffect } from 'react'
 import AdminDashboard from './pages/Admin/AdminDashboard'
 import CategoriesAdmin from './pages/Admin/CategoriesAdmin'
 
 
 function App() {
 
-  const [user, setUser] = useState(null);
+  // const [user, setUser] = useState(null);
 
-  useEffect(() => {
-    async function fetchUser() {
-      try {
-        const me = await getMe();
-        setUser(me);
-      } catch (err) {
-        console.error(err);
-      }
-    }
-    fetchUser();
-  }, []);
+  // useEffect(() => {
+  //   async function fetchUser() {
+  //     try {
+  //       const me = await getMe();
+  //       setUser(me);  
+  //     } catch (err) {
+  //       console.error(err);
+  //     }
+  //   }
+  //   fetchUser();
+  // }, []);
 
   return (
     <AuthProvider>

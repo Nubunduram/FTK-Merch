@@ -10,10 +10,10 @@ import AuthRequired from "../../components/AuthRequired";
 import styles from './Profile.module.css';
 
 const TABS = [
-  { id: "profile",   label: "Profil",    icon: FaUser },
-  { id: "security",  label: "Sécurité",  icon: FaLock },
-  { id: "addresses", label: "Adresses",  icon: FaMapMarkerAlt },
-  { id: "rgpd",      label: "Données",   icon: FaShieldAlt },
+  { id: "profile", label: "Profil", icon: FaUser },
+  { id: "security", label: "Sécurité", icon: FaLock },
+  { id: "addresses", label: "Adresses", icon: FaMapMarkerAlt },
+  { id: "rgpd", label: "Données", icon: FaShieldAlt },
 ];
 
 export default function Profile() {
@@ -107,7 +107,7 @@ export default function Profile() {
       a.download = `ftk-merch-mes-donnees-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch (err) {
+    } catch {
       showToast("Erreur lors de l'export. Veuillez réessayer.", "error");
     } finally {
       setRgpdLoading(false);
@@ -135,7 +135,7 @@ export default function Profile() {
       await deleteMe();
       logout();
       navigate("/");
-    } catch (err) {
+    } catch {
       showToast("Erreur lors de la suppression. Veuillez réessayer.", "error");
       setRgpdLoading(false);
     }

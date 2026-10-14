@@ -8,7 +8,6 @@ const ProductCard = ({ product, categorySlug }) => {
   const colors = [...new Map(
     product.variants?.map(v => [v.color, { name: v.color, hex: v.color_hex }]) || []
   ).values()];
-  const hasOutOfStock = sizes.some(size => !product.variants?.some(v => v.size === size && v.stock > 0));
   const allOutOfStock = sizes.every(size => !product.variants?.some(v => v.size === size && v.stock > 0));
 
   return (

@@ -31,24 +31,22 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem("token", data.token);
       const me = await getMe();
       setUser(me);
-    } catch (err) {
-      throw err;
     } finally {
       setAuthLoading(false);
     }
   };
 
   const signupAndLogin = async (first_name, last_name, email, password) => {
-  setAuthLoading(true);
-  try {
-    const data = await signup(first_name, last_name, email, password);
-    localStorage.setItem("token", data.token);
-    const me = await getMe();
-    setUser(me);
-  } finally {
-    setAuthLoading(false);
-  }
-};
+    setAuthLoading(true);
+    try {
+      const data = await signup(first_name, last_name, email, password);
+      localStorage.setItem("token", data.token);
+      const me = await getMe();
+      setUser(me);
+    } finally {
+      setAuthLoading(false);
+    }
+  };
 
   const logout = () => {
     setUser(null);

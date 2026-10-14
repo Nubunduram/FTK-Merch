@@ -4,12 +4,13 @@ import { FaArrowRight, FaReceipt } from "react-icons/fa"
 import { useCart } from "../../context/CartContext"
 import styles from './Success.module.css'
 
+
 export default function Success() {
   const { clearCart } = useCart()
   const [loading, setLoading] = useState(true)
 
-  useEffect(() => { clearCart() }, [])
-
+  useEffect(() => { clearCart() }, [clearCart])
+  
   useEffect(() => {
     const timer = setTimeout(() => setLoading(false), 1800)
     return () => clearTimeout(timer)

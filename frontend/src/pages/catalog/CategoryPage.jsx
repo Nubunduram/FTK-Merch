@@ -7,7 +7,6 @@ import styles from './CategoryPage.module.css';
 
 const CategoryPage = () => {
   const { categoryName } = useParams();
-  const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
   const [category, setCategory] = useState(null);
   const [products, setProducts] = useState([]);
@@ -20,7 +19,6 @@ const CategoryPage = () => {
     const fetchData = async () => {
       try {
         const [cats, subCats] = await Promise.all([getCategories(), getSubCategories()]);
-        setCategories(cats);
         setSubCategories(subCats);
         const foundCategory = cats.find(c => c.slug === categoryName);
         if (foundCategory) setCategory(foundCategory);

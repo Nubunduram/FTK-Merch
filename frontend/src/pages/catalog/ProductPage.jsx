@@ -62,7 +62,6 @@ export default function ProductPage() {
   );
   const hasAlreadyCommented = comments.some(c => c.users_id === user?.id);
   const selectedVariant = variants.find(v => v.color === selectedColor && v.size === selectedSize);
-  const isOutOfStock = selectedSize && selectedVariant?.stock === 0;
 
   const handleSelectColor = (color) => {
     setSelectedColor(color);

@@ -11,7 +11,7 @@ const SHIPPING_FEE = 5.90;
 const FREE_SHIPPING_THRESHOLD = 60;
 
 export default function Cart() {
-  const { cart, removeFromCart, updateQuantity, clearCart } = useCart();
+  const { cart, removeFromCart, updateQuantity } = useCart();
   const navigate = useNavigate();
   const { user, authLoading } = useAuth();
 
