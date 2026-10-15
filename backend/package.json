@@ -4,7 +4,9 @@
   "main": "index.js",
   "scripts": {
     "dev": "nodemon server.js",
-    "start": "node migrate.js && node server.js"
+    "start": "node migrate.js && node server.js",
+    "test": "jest",
+    "test:coverage": "jest --coverage"
   },
   "keywords": [],
   "author": "",
@@ -20,6 +22,8 @@
     "stripe": "^22.1.1"
   },
   "devDependencies": {
-    "nodemon": "^3.1.11"
+    "jest": "^30.5.2",
+    "nodemon": "^3.1.11",
+    "supertest": "^7.3.1"
   }
 }
